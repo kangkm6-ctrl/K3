@@ -102,7 +102,7 @@ bind(k);
 }
 function vList(k){
 const arr=monthTx(k),{i,e,u,u1,u2}=sums(arr);
-let h=`<div class="sum"><div class="row"><span>수입</span><span class="inc">${won(i)}원</span></div>${u?`<div class="row" style="font-size:13px"><span>　└ 월급 (이동분 제외)</span><span>${won(i-u)}원</span></div>${u1?`<div class="row" style="font-size:13px"><span>　└ 용돈 (월급에서 이동)</span><span>${won(u1)}원</span></div>`:''}${u2?`<div class="row" style="font-size:13px"><span>　└ 지출분류 (월급에서 이동)</span><span>${won(u2)}원</span></div>`:''}`:''}<div class="row"><span>지출</span><span class="exp">${won(e)}원</span></div><div class="row big"><span style="color:var(--ink)">남은 돈</span><span class="${i-e<0?'exp':'inc'}">${won(i-e)}원</span></div>`;
+let h=`<div class="sum"><div class="row"><span>수입</span><span class="inc">${won(i)}원</span></div>${u?`<div class="row" style="font-size:13px"><span>　└ 월급 (이동분 제외)</span><span>${won(i-u)}원</span></div>${u1?`<div class="row" style="font-size:13px"><span>　└ 용돈 (월급에서 이동)</span><span>${won(u1)}원</span></div>`:''}${u2?`<div class="row" style="font-size:13px"><span>　└ 지출분류 (용돈에서 이동)</span><span>${won(u2)}원</span></div>`:''}`:''}<div class="row"><span>지출</span><span class="exp">${won(e)}원</span></div><div class="row big"><span style="color:var(--ink)">남은 돈</span><span class="${i-e<0?'exp':'inc'}">${won(i-e)}원</span></div>`;
 if(S.budget>0){const p=Math.min(100,e/S.budget*100);h+=`<div class="bud"><div class="bar"><i class="${e>S.budget?'over':''}" style="width:${p}%"></i></div><small><span>이번 달 예산 ${won(S.budget)}원</span><span>${e>S.budget?won(e-S.budget)+'원 초과':won(S.budget-e)+'원 남음'}</span></small></div>`}
 h+='</div>';
 const fx=arr.filter(x=>x.t==='e'&&x.r),ins=arr.filter(x=>x.ins),sm2=a=>a.reduce((q,x)=>q+x.a,0);
@@ -116,7 +116,7 @@ const dt=new Date(d+'T00:00:00'),ds=sums(days[d]);
 h+=`<div class="day"><div class="dh"><span>${dt.getMonth()+1}월 ${dt.getDate()}일 (${'일월화수목금토'[dt.getDay()]})</span><span>${ds.i?'+'+won(ds.i)+' ':''}${ds.e?'-'+won(ds.e):''}${ds.u?' (이동 '+won(ds.u)+')':''}</span></div>`;
 days[d].slice().reverse().forEach(x=>{
 const c=cat(x.t,x.c);
-h+=`<div class="it" data-id="${x.id}"><div class="del" data-del="${x.id}">삭제</div><div class="in"><div class="ico">${c[1]}</div><div class="mid"><b>${esc(x.m)||x.c}</b><small>${x.c} · ${x.t==='i'?(MV(x.c)?'월급에서 이동':'수입'):(x.pn||pname(x.p))}${x.t==='i'&&x.c==='용돈'&&x.pc>0?' · 월급의 '+x.pc+'%':''}${x.ins?' · <span class="tg">할부 '+x.ins.n+'/'+x.ins.of+'회 · 총'+won(x.ins.total)+'</span>':''}${x.r?' · <span class="tg">'+(x.t==='i'?'고정수입':'고정비')+(x.rf?'('+({w:'매주',m:'매월',y:'매년'})[x.rf]+')':'')+'</span>':''}</small></div><div class="amt ${x.t==='i'?'inc':'exp'}">${x.t==='i'?'+':'-'}${won(x.a)}</div></div></div>`;
+h+=`<div class="it" data-id="${x.id}"><div class="del" data-del="${x.id}">삭제</div><div class="in"><div class="ico">${c[1]}</div><div class="mid"><b>${esc(x.m)||x.c}</b><small>${x.c} · ${x.t==='i'?(MV(x.c)?(x.c==='지출분류'?'용돈에서 이동':'월급에서 이동'):'수입'):(x.pn||pname(x.p))}${x.t==='i'&&x.c==='용돈'&&x.pc>0?' · 월급의 '+x.pc+'%':''}${x.ins?' · <span class="tg">할부 '+x.ins.n+'/'+x.ins.of+'회 · 총'+won(x.ins.total)+'</span>':''}${x.r?' · <span class="tg">'+(x.t==='i'?'고정수입':'고정비')+(x.rf?'('+({w:'매주',m:'매월',y:'매년'})[x.rf]+')':'')+'</span>':''}</small></div><div class="amt ${x.t==='i'?'inc':'exp'}">${x.t==='i'?'+':'-'}${won(x.a)}</div></div></div>`;
 });
 h+='</div>';
 });
@@ -156,8 +156,8 @@ return h;
 }
 function vSet(){
 let h=`<div class="mhead"><b>설정</b></div><div class="card"><h3>월 예산</h3><input class="in2" id="bud" inputmode="numeric" placeholder="예: 2,000,000 (0이면 사용 안 함)" value="${S.budget?won(S.budget):''}"><button class="btn p" id="budsave">저장</button></div>`;
-h+='<div class="card"><h3>고정항목 (매월 반복)</h3>';
-if(!S.rec.length)h+='<div style="color:var(--sub);font-size:14px">월세·통신비·보험료처럼 매달 나가는 돈을 등록해두면 한 번에 넣을 수 있어요. 등록은 + 버튼에서 “매월 반복”을 체크하세요.</div>';
+h+='<div class="card"><h3>고정항목 (반복)</h3>';
+if(!S.rec.length)h+='<div style="color:var(--sub);font-size:14px">월세·통신비·보험료처럼 반복해서 나가는 돈을 등록해두면 한 번에 넣을 수 있어요. 등록은 + 버튼에서 반복(매주·매월·매년)을 고르세요.</div>';
 S.rec.forEach(r=>h+=`<div class="rr"><div>${cat(r.t,r.c)[1]} ${esc(r.m)||r.c}<small>${rlabel(r)} · ${r.t==='i'?'수입':pname(r.p)}${r.i>1?' · '+r.i+'개월 할부':''}</small></div><div>${won(r.a)}원 <button class="x" data-rd="${r.id}">✕</button></div></div>`);
 h+='</div>';
 h+=`<div class="card"><h3>백업 / 복원</h3><div style="color:var(--sub);font-size:13px;line-height:1.6">기록은 이 기기(Safari)에만 저장돼요. 가끔 백업해두면 폰을 바꿔도 안전해요.</div><button class="btn p" id="exp">백업 파일 저장</button><button class="btn" id="expx">엑셀(CSV)로 내보내기</button><button class="btn g" id="imp">백업 불러오기</button><input type="file" id="file" accept=".json,application/json" style="display:none"></div>`;
