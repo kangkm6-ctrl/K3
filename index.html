@@ -26,7 +26,7 @@
 <div class="toast" id="toast"></div>
 <script>
 (function(){
-const EC=[['생활비','💸'],['식비','🍚'],['카페·간식','☕'],['생활용품','🧴'],['교통','🚌'],['주거·관리비','🏠'],['인터넷·통신','📱'],['의료','💊'],['교육','📚'],['의류·미용','👗'],['문화·여가','🎬'],['기부·헌금','🙏'],['경조사','🎁'],['받을 돈','🤝'],['보험','🛡️'],['세금','🧾'],['기타','📦']];
+const EC=[['생활비','💸'],['용돈','🧧'],['식비','🍚'],['카페·간식','☕'],['생활용품','🧴'],['교통','🚌'],['주거·관리비','🏠'],['인터넷·통신','📱'],['의료','💊'],['교육','📚'],['의류·미용','👗'],['문화·여가','🎬'],['기부·헌금','🙏'],['경조사','🎁'],['받을 돈','🤝'],['보험','🛡️'],['세금','🧾'],['기타','📦']];
 const MV=c=>c==='용돈',RC=c=>c==='받을 돈';
 const IC=[['월급','💰'],['용돈','🧧'],['부수입','✨'],['기타수입','📥']];
 const cards=()=>S.cards&&S.cards.length===5?S.cards:[1,2,3,4,5].map(i=>'카드'+i);
@@ -91,7 +91,9 @@ const mk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1);
 function eff(){const o=[];S.tx.forEach(x=>{const n=x.t==='e'&&x.i>1?x.i:1;if(n===1){o.push(x);return}
 const y=+x.d.slice(0,4),m=+x.d.slice(5,7)-1,d=+x.d.slice(8),b=Math.floor(x.a/n);
 for(let j=0;j<n;j++){const l=new Date(y,m+j+1,0).getDate(),t=new Date(y,m+j,1);
-o.push({...x,d:ymd(new Date(t.getFullYear(),t.getMonth(),Math.min(d,l))),a:j===n-1?x.a-b*(n-1):b,ins:{n:j+1,of:n,total:x.a}})}});new Set(S.tx.filter(x=>x.t==='i'&&x.c==='월급').map(x=>x.d.slice(0,7))).forEach(k=>{if(k<ymd(new Date()).slice(0,7)||S.tx.some(x=>x.t==='e'&&x.c==='생활비'&&x.d.startsWith(k)))return;const ss=S.tx.filter(x=>x.t==='i'&&x.c==='월급'&&x.d.startsWith(k)),sal=ss.reduce((a,x)=>a+x.a,0),pv=ymd(new Date(+k.slice(0,4),+k.slice(5)-2,1)).slice(0,7),rc=S.tx.filter(x=>x.t==='e'&&RC(x.c)&&x.d.startsWith(pv)).reduce((a,x)=>a+x.a,0);o.push({id:'lv'+k,d:ss.map(x=>x.d).sort()[0],t:'e',c:'생활비',a:Math.max(0,Math.round(sal*.9-rc)),p:'계좌',m:'생활비 (자동)',auto:1,rc})});return o}
+o.push({...x,d:ymd(new Date(t.getFullYear(),t.getMonth(),Math.min(d,l))),a:j===n-1?x.a-b*(n-1):b,ins:{n:j+1,of:n,total:x.a}})}});const sm=m=>S.tx.filter(x=>x.t==='i'&&x.c==='월급'&&x.d.startsWith(m)),sk=[...new Set(S.tx.filter(x=>x.t==='i'&&x.c==='월급').map(x=>x.d.slice(0,7)))],nw=new Date(),nk=ymd(nw).slice(0,7);
+new Set(sk.concat(nk,ymd(new Date(nw.getFullYear(),nw.getMonth()+1,1)).slice(0,7))).forEach(k=>{if(k<nk||S.tx.some(x=>x.t==='e'&&x.c==='생활비'&&x.d.startsWith(k)))return;let ss=sm(k),est=0,sal=ss.reduce((a,x)=>a+x.a,0);if(!sal){const pm=sk.filter(m=>m<k).sort().pop();if(!pm)return;sal=sm(pm).reduce((a,x)=>a+x.a,0);est=1}
+const pv=ymd(new Date(+k.slice(0,4),+k.slice(5)-2,1)).slice(0,7),rc=S.tx.filter(x=>x.t==='e'&&RC(x.c)&&x.d.startsWith(pv)).reduce((a,x)=>a+x.a,0);o.push({id:'lv'+k,d:est?k+'-01':ss.map(x=>x.d).sort()[0],t:'e',c:'생활비',a:Math.max(0,Math.round(sal*.9-rc)),p:'계좌',m:'생활비 (자동)',auto:1,rc,est})});return o}
 function monthTx(k){return eff().filter(x=>x.d.startsWith(k))}
 function sums(arr){let i=0,e=0,u=0,u1=0,u2=0;arr.forEach(x=>x.t==='x'?0:x.t==='i'?(MV(x.c)?(u+=x.a,u1+=x.a):i+=x.a):e+=x.a);return{i,e,u,u1,u2}}
 function render(){
@@ -123,7 +125,7 @@ const dt=new Date(d+'T00:00:00'),ds=sums(days[d]);
 h+=`<div class="day"><div class="dh"><span>${dt.getMonth()+1}월 ${dt.getDate()}일 (${'일월화수목금토'[dt.getDay()]})</span><span>${ds.i?'+'+won(ds.i)+' ':''}${ds.e?'-'+won(ds.e):''}${ds.u?' (이동 '+won(ds.u)+')':''}</span></div>`;
 days[d].slice().reverse().forEach(x=>{
 const c=cat(x.t,x.c);
-h+=`<div class="it" data-id="${x.id}"><div class="del" data-del="${x.id}">${x.auto?'수정':'삭제'}</div><div class="in"><div class="ico">${c[1]}</div><div class="mid"><b>${esc(x.m)||x.c}</b><small>${x.c} · ${x.t==='x'?(x.k==='pt'?'포인트 사용 · 수입·지출 아님':'충전 · 계좌에서 이동'):x.t==='i'?(MV(x.c)?'월급에서 이동 · 수입 아님':x.k==='in'?'입금':'수입'):(x.k==='ch'?'충전 · ':'')+(x.pn||pname(x.p))}${x.t==='e'&&x.c==='생활비'&&x.pc>0?' · 월급의 '+x.pc+'%':''}${x.auto?' · <span class="tg">자동 월급×90%'+(x.rc?'−받을 돈 '+won(x.rc):'')+' · 눌러서 수정</span>':''}${x.ins?' · <span class="tg">할부 '+x.ins.n+'/'+x.ins.of+'회 · 총'+won(x.ins.total)+'</span>':''}${x.r?' · <span class="tg">'+(x.t==='i'?'고정수입':'고정비')+(x.rf?'('+({w:'매주',m:'매월',y:'매년'})[x.rf]+')':'')+'</span>':''}</small></div><div class="amt ${x.t==='i'&&!MV(x.c)||x.t==='e'&&x.a<0?'inc':x.t==='x'||x.t==='i'?'':'exp'}"${x.t==='x'||(x.t==='i'&&MV(x.c))?' style="color:var(--sub)"':''}>${x.t==='i'&&!MV(x.c)||x.t==='e'&&x.a<0?'+':x.t==='x'||x.t==='i'?'':'-'}${won(Math.abs(x.a))}</div></div></div>`;
+h+=`<div class="it" data-id="${x.id}"><div class="del" data-del="${x.id}">${x.auto?'수정':'삭제'}</div><div class="in"><div class="ico">${c[1]}</div><div class="mid"><b>${esc(x.m)||x.c}</b><small>${x.c} · ${x.t==='x'?(x.k==='pt'?'포인트 사용 · 수입·지출 아님':'충전 · 계좌에서 이동'):x.t==='i'?(MV(x.c)?'월급에서 이동 · 수입 아님':x.k==='in'?'입금':'수입'):(x.k==='ch'?'충전 · ':'')+(x.pn||pname(x.p))}${x.t==='e'&&x.c==='생활비'&&x.pc>0?' · 월급의 '+x.pc+'%':''}${x.auto?' · <span class="tg">자동 '+(x.est?'지난 월급':'월급')+'×90%'+(x.rc?'−받을 돈 '+won(x.rc):'')+' · 눌러서 수정</span>':''}${x.ins?' · <span class="tg">할부 '+x.ins.n+'/'+x.ins.of+'회 · 총'+won(x.ins.total)+'</span>':''}${x.r?' · <span class="tg">'+(x.t==='i'?'고정수입':'고정비')+(x.rf?'('+({w:'매주',m:'매월',y:'매년'})[x.rf]+')':'')+'</span>':''}</small></div><div class="amt ${x.t==='i'&&!MV(x.c)||x.t==='e'&&x.a<0?'inc':x.t==='x'||x.t==='i'?'':'exp'}"${x.t==='x'||(x.t==='i'&&MV(x.c))?' style="color:var(--sub)"':''}>${x.t==='i'&&!MV(x.c)||x.t==='e'&&x.a<0?'+':x.t==='x'||x.t==='i'?'':'-'}${won(Math.abs(x.a))}</div></div></div>`;
 });
 h+='</div>';
 });
