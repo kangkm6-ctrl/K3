@@ -91,9 +91,10 @@ const mk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1);
 function eff(){const o=[];S.tx.forEach(x=>{const n=x.t==='e'&&x.i>1?x.i:1;if(n===1){o.push(x);return}
 const y=+x.d.slice(0,4),m=+x.d.slice(5,7)-1,d=+x.d.slice(8),b=Math.floor(x.a/n);
 for(let j=0;j<n;j++){const l=new Date(y,m+j+1,0).getDate(),t=new Date(y,m+j,1);
-o.push({...x,d:ymd(new Date(t.getFullYear(),t.getMonth(),Math.min(d,l))),a:j===n-1?x.a-b*(n-1):b,ins:{n:j+1,of:n,total:x.a}})}});const sm=m=>S.tx.filter(x=>x.t==='i'&&x.c==='월급'&&x.d.startsWith(m)),sk=[...new Set(S.tx.filter(x=>x.t==='i'&&x.c==='월급').map(x=>x.d.slice(0,7)))],nw=new Date(),nk=ymd(nw).slice(0,7);
-new Set(sk.concat(nk,ymd(new Date(nw.getFullYear(),nw.getMonth()+1,1)).slice(0,7))).forEach(k=>{if(k<nk||S.tx.some(x=>x.t==='e'&&x.c==='생활비'&&x.d.startsWith(k)))return;let ss=sm(k),est=0,sal=ss.reduce((a,x)=>a+x.a,0);if(!sal){const pm=sk.filter(m=>m<k).sort().pop();if(!pm)return;sal=sm(pm).reduce((a,x)=>a+x.a,0);est=1}
-const pv=ymd(new Date(+k.slice(0,4),+k.slice(5)-2,1)).slice(0,7),rc=S.tx.filter(x=>x.t==='e'&&RC(x.c)&&x.d.startsWith(pv)).reduce((a,x)=>a+x.a,0);o.push({id:'lv'+k,d:est?k+'-01':ss.map(x=>x.d).sort()[0],t:'e',c:'생활비',a:Math.max(0,Math.round(sal*.9-rc)),p:'계좌',m:'생활비 (자동)',auto:1,rc,est})});return o}
+o.push({...x,d:ymd(new Date(t.getFullYear(),t.getMonth(),Math.min(d,l))),a:j===n-1?x.a-b*(n-1):b,ins:{n:j+1,of:n,total:x.a}})}});const sm=m=>S.tx.filter(x=>x.t==='i'&&x.c==='월급'&&x.d.startsWith(m)),sk=[...new Set(S.tx.filter(x=>x.t==='i'&&x.c==='월급').map(x=>x.d.slice(0,7)))],nw=new Date(),nk=ymd(nw).slice(0,7),su=l=>l.reduce((a,x)=>a+x.a,0);
+const rcm=k=>{const p=ymd(new Date(+k.slice(0,4),+k.slice(5)-2,1)).slice(0,7);return su(o.filter(x=>x.t==='e'&&RC(x.c)&&x.d.startsWith(p)))},so=k=>{let a=su(sm(k));if(a)return[a,0];const p=sk.filter(m=>m<k).sort().pop();return p?[su(sm(p)),1]:[0,0]};
+for(let n=0;n<o.length;n++){const x=o[n];if(x.t==='e'&&x.c==='생활비'&&x.pc>0){const k=x.d.slice(0,7),rc=rcm(k);o[n]={...x,a:Math.max(0,Math.round(so(k)[0]*x.pc/100-rc)),rc}}}
+new Set(sk.concat(nk,ymd(new Date(nw.getFullYear(),nw.getMonth()+1,1)).slice(0,7))).forEach(k=>{if(k<nk||S.tx.some(x=>x.t==='e'&&x.c==='생활비'&&x.d.startsWith(k)))return;const[sal,est]=so(k);if(!sal)return;const rc=rcm(k);o.push({id:'lv'+k,d:est?k+'-01':sm(k).map(x=>x.d).sort()[0],t:'e',c:'생활비',a:Math.max(0,Math.round(sal*.9-rc)),p:'계좌',m:'생활비 (자동)',auto:1,rc,est})});return o}
 function monthTx(k){return eff().filter(x=>x.d.startsWith(k))}
 function sums(arr){let i=0,e=0,u=0,u1=0,u2=0;arr.forEach(x=>x.t==='x'?0:x.t==='i'?(MV(x.c)?(u+=x.a,u1+=x.a):i+=x.a):e+=x.a);return{i,e,u,u1,u2}}
 function render(){
@@ -125,7 +126,7 @@ const dt=new Date(d+'T00:00:00'),ds=sums(days[d]);
 h+=`<div class="day"><div class="dh"><span>${dt.getMonth()+1}월 ${dt.getDate()}일 (${'일월화수목금토'[dt.getDay()]})</span><span>${ds.i?'+'+won(ds.i)+' ':''}${ds.e?'-'+won(ds.e):''}${ds.u?' (이동 '+won(ds.u)+')':''}</span></div>`;
 days[d].slice().reverse().forEach(x=>{
 const c=cat(x.t,x.c);
-h+=`<div class="it" data-id="${x.id}"><div class="del" data-del="${x.id}">${x.auto?'수정':'삭제'}</div><div class="in"><div class="ico">${c[1]}</div><div class="mid"><b>${esc(x.m)||x.c}</b><small>${x.c} · ${x.t==='x'?(x.k==='pt'?'포인트 사용 · 수입·지출 아님':'충전 · 계좌에서 이동'):x.t==='i'?(MV(x.c)?'월급에서 이동 · 수입 아님':x.k==='in'?'입금':'수입'):(x.k==='ch'?'충전 · ':'')+(x.pn||pname(x.p))}${x.t==='e'&&x.c==='생활비'&&x.pc>0?' · 월급의 '+x.pc+'%':''}${x.auto?' · <span class="tg">자동 '+(x.est?'지난 월급':'월급')+'×90%'+(x.rc?'−받을 돈 '+won(x.rc):'')+' · 눌러서 수정</span>':''}${x.ins?' · <span class="tg">할부 '+x.ins.n+'/'+x.ins.of+'회 · 총'+won(x.ins.total)+'</span>':''}${x.r?' · <span class="tg">'+(x.t==='i'?'고정수입':'고정비')+(x.rf?'('+({w:'매주',m:'매월',y:'매년'})[x.rf]+')':'')+'</span>':''}</small></div><div class="amt ${x.t==='i'&&!MV(x.c)||x.t==='e'&&x.a<0?'inc':x.t==='x'||x.t==='i'?'':'exp'}"${x.t==='x'||(x.t==='i'&&MV(x.c))?' style="color:var(--sub)"':''}>${x.t==='i'&&!MV(x.c)||x.t==='e'&&x.a<0?'+':x.t==='x'||x.t==='i'?'':'-'}${won(Math.abs(x.a))}</div></div></div>`;
+h+=`<div class="it" data-id="${x.id}"><div class="del" data-del="${x.id}">${x.auto?'수정':'삭제'}</div><div class="in"><div class="ico">${c[1]}</div><div class="mid"><b>${esc(x.m)||x.c}</b><small>${x.c} · ${x.t==='x'?(x.k==='pt'?'포인트 사용 · 수입·지출 아님':'충전 · 계좌에서 이동'):x.t==='i'?(MV(x.c)?'월급에서 이동 · 수입 아님':x.k==='in'?'입금':'수입'):(x.k==='ch'?'충전 · ':'')+(x.pn||pname(x.p))}${x.t==='e'&&x.c==='생활비'&&x.pc>0?' · 월급의 '+x.pc+'%'+(x.rc?'−받을 돈 '+won(x.rc):''):''}${x.auto?' · <span class="tg">자동 '+(x.est?'지난 월급':'월급')+'×90%'+(x.rc?'−받을 돈 '+won(x.rc):'')+' · 눌러서 수정</span>':''}${x.ins?' · <span class="tg">할부 '+x.ins.n+'/'+x.ins.of+'회 · 총'+won(x.ins.total)+'</span>':''}${x.r?' · <span class="tg">'+(x.t==='i'?'고정수입':'고정비')+(x.rf?'('+({w:'매주',m:'매월',y:'매년'})[x.rf]+')':'')+'</span>':''}</small></div><div class="amt ${x.t==='i'&&!MV(x.c)||x.t==='e'&&x.a<0?'inc':x.t==='x'||x.t==='i'?'':'exp'}"${x.t==='x'||(x.t==='i'&&MV(x.c))?' style="color:var(--sub)"':''}>${x.t==='i'&&!MV(x.c)||x.t==='e'&&x.a<0?'+':x.t==='x'||x.t==='i'?'':'-'}${won(Math.abs(x.a))}</div></div></div>`;
 });
 h+='</div>';
 });
@@ -222,7 +223,7 @@ const inn=el.querySelector('.in');let x0=0,y0=0,dx=0,mv=false,open=false;
 el.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=0;mv=false;inn.style.transition='none'},{passive:true});
 el.addEventListener('touchmove',e=>{const a=e.touches[0].clientX-x0,b=e.touches[0].clientY-y0;if(!mv&&Math.abs(b)>Math.abs(a))return;if(Math.abs(a)>8)mv=true;if(mv){el.querySelector('.del').style.visibility='visible';dx=Math.max(-80,Math.min(0,a+(open?-80:0)));inn.style.transform=`translateX(${dx}px)`}},{passive:true});
 el.addEventListener('touchend',()=>{inn.style.transition='';if(mv){open=dx<-40;inn.style.transform=open?'translateX(-80px)':'';if(!open)setTimeout(()=>el.querySelector('.del').style.visibility='',200)}});
-inn.onclick=()=>{if(mv){mv=false;return}if(open){open=false;inn.style.transform='';setTimeout(()=>el.querySelector('.del').style.visibility='',200);return}{const t=S.tx.find(t=>t.id===el.dataset.id);t?openSheet(t):openSheet(eff().find(x=>x.id===el.dataset.id),1)}};
+inn.onclick=()=>{if(mv){mv=false;return}if(open){open=false;inn.style.transform='';setTimeout(()=>el.querySelector('.del').style.visibility='',200);return}{const t=S.tx.find(t=>t.id===el.dataset.id);if(t&&t.pc>0&&t.c==='생활비'){const v=eff().find(x=>x.id===t.id);if(v)t.a=v.a}t?openSheet(t):openSheet(eff().find(x=>x.id===el.dataset.id),1)}};
 el.querySelector('.del').onclick=()=>{if(el.dataset.id.startsWith('lv')){openSheet(eff().find(x=>x.id===el.dataset.id),1);return}S.tx=S.tx.filter(t=>t.id!==el.dataset.id);save();render();toast('삭제했어요')};
 }
 function openSheet(tx,asNew){
@@ -275,7 +276,7 @@ let T=f.t,C=f.c,P=f.p,XK=f.k;const viaTab=T==='x';if(T==='e'&&isDB(P)&&f.dm!=='u
 if(T==='x'){if(viaTab&&f.xm==='ch'){T='e';C=f.xa;P='계좌';XK='ch'}else if(viaTab&&f.xm==='in'){T='i';C=f.xa;P='';XK='in'}else{C=f.xa;XK=f.xm;P=''}}
 const ii=(T==='e'&&isCard(P)&&!isDB(P))?(f.i||1):1;
 const np=T==='i'||T==='x'?'':P;
-if(ed){const pn=(tx.p===np&&tx.pn)?tx.pn:snap(np);Object.assign(tx,{t:T,a:f.a,c:C,p:np,pn,i:ii,pc:(T==='e'&&C==='생활비'&&f.pc>0)?f.pc:0,m:f.m,d:f.d,k:XK})}
+if(ed){const pn=(tx.p===np&&tx.pn)?tx.pn:snap(np);Object.assign(tx,{t:T,a:f.a,c:C,p:np,pn,i:ii,pc:0,m:f.m,d:f.d,k:XK})}
 else{
 const rc=viaTab?(f.xa==='계좌분류'&&f.fx&&f.xm!=='pt'?'m':''):(T==='x'?'':f.rp||''),row={id:uid(),d:f.d,t:T,a:f.a,c:C,p:np,pn:snap(np),i:ii,pc:(T==='e'&&C==='생활비'&&f.pc>0)?f.pc:0,m:f.m,r:rc?1:0,rf:rc||undefined,k:XK};
 S.tx.push(row);
