@@ -27,7 +27,8 @@
 <script>
 (function(){
 const EC=[['생활비','💸'],['식비','🍚'],['카페·간식','☕'],['생활용품','🧴'],['교통','🚌'],['주거·관리비','🏠'],['통신','📱'],['의료','💊'],['교육','📚'],['의류·미용','👗'],['문화·여가','🎬'],['기부·헌금','🙏'],['경조사','🎁'],['기타','📦']];
-const IC=[['월급','💰'],['용돈','🧧'],['부수입','✨'],['기타수입','📥']];
+const MV=c=>c==='용돈'||c==='지출분류';
+const IC=[['월급','💰'],['용돈','🧧'],['지출분류','📤'],['부수입','✨'],['기타수입','📥']];
 const cards=()=>S.cards&&S.cards.length===5?S.cards:[1,2,3,4,5].map(i=>'카드'+i);
 const isCard=p=>/^c[1-5]$/.test(p||'')||p==='카드';
 const pname=p=>{const m=/^c([1-5])$/.exec(p||'');return m?cards()[m[1]-1]:p};
@@ -83,12 +84,12 @@ let cur=new Date();cur.setDate(1);
 let tab='list',sm='m',ghOpen=false,wpOpen=false;
 function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',1800)}
 const mk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1);
-function eff(){const o=[],sal=m=>S.tx.reduce((a,y)=>a+(y.t==='i'&&y.c==='월급'&&y.d.startsWith(m)?y.a:0),0);S.tx.forEach(x=>{const n=x.t==='e'&&x.i>1?x.i:1;if(n===1){o.push(x.t==='i'&&x.pc>0?{...x,a:Math.round(sal(x.d.slice(0,7))*x.pc/100)}:x);return}
+function eff(){const o=[],sal=m=>S.tx.reduce((a,y)=>a+(y.t==='i'&&y.c==='월급'&&y.d.startsWith(m)?y.a:0),0);S.tx.forEach(x=>{const n=x.t==='e'&&x.i>1?x.i:1;if(n===1){o.push(x.t==='i'&&x.c==='용돈'&&x.pc>0?{...x,a:Math.round(sal(x.d.slice(0,7))*x.pc/100)}:x);return}
 const y=+x.d.slice(0,4),m=+x.d.slice(5,7)-1,d=+x.d.slice(8),b=Math.floor(x.a/n);
 for(let j=0;j<n;j++){const l=new Date(y,m+j+1,0).getDate(),t=new Date(y,m+j,1);
 o.push({...x,d:ymd(new Date(t.getFullYear(),t.getMonth(),Math.min(d,l))),a:j===n-1?x.a-b*(n-1):b,ins:{n:j+1,of:n,total:x.a}})}});return o}
 function monthTx(k){return eff().filter(x=>x.d.startsWith(k))}
-function sums(arr){let i=0,e=0,u=0;arr.forEach(x=>x.t==='i'?(x.c==='용돈'?u+=x.a:i+=x.a):e+=x.a);return{i,e,u}}
+function sums(arr){let i=0,e=0,u=0,u1=0,u2=0;arr.forEach(x=>x.t==='i'?(MV(x.c)?(u+=x.a,x.c==='용돈'?u1+=x.a:u2+=x.a):i+=x.a):e+=x.a);return{i,e,u,u1,u2}}
 function render(){
 $('#fab').style.display=tab==='set'?'none':'flex';
 document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
@@ -100,8 +101,8 @@ $('#app').innerHTML=h;
 bind(k);
 }
 function vList(k){
-const arr=monthTx(k),{i,e,u}=sums(arr);
-let h=`<div class="sum"><div class="row"><span>수입</span><span class="inc">${won(i)}원</span></div>${u?`<div class="row" style="font-size:13px"><span>　└ 월급 (용돈 제외)</span><span>${won(i-u)}원</span></div><div class="row" style="font-size:13px"><span>　└ 용돈 (월급에서 이동)</span><span>${won(u)}원</span></div>`:''}<div class="row"><span>지출</span><span class="exp">${won(e)}원</span></div><div class="row big"><span style="color:var(--ink)">남은 돈</span><span class="${i-e<0?'exp':'inc'}">${won(i-e)}원</span></div>`;
+const arr=monthTx(k),{i,e,u,u1,u2}=sums(arr);
+let h=`<div class="sum"><div class="row"><span>수입</span><span class="inc">${won(i)}원</span></div>${u?`<div class="row" style="font-size:13px"><span>　└ 월급 (이동분 제외)</span><span>${won(i-u)}원</span></div>${u1?`<div class="row" style="font-size:13px"><span>　└ 용돈 (월급에서 이동)</span><span>${won(u1)}원</span></div>`:''}${u2?`<div class="row" style="font-size:13px"><span>　└ 지출분류 (월급에서 이동)</span><span>${won(u2)}원</span></div>`:''}`:''}<div class="row"><span>지출</span><span class="exp">${won(e)}원</span></div><div class="row big"><span style="color:var(--ink)">남은 돈</span><span class="${i-e<0?'exp':'inc'}">${won(i-e)}원</span></div>`;
 if(S.budget>0){const p=Math.min(100,e/S.budget*100);h+=`<div class="bud"><div class="bar"><i class="${e>S.budget?'over':''}" style="width:${p}%"></i></div><small><span>이번 달 예산 ${won(S.budget)}원</span><span>${e>S.budget?won(e-S.budget)+'원 초과':won(S.budget-e)+'원 남음'}</span></small></div>`}
 h+='</div>';
 const fx=arr.filter(x=>x.t==='e'&&x.r),ins=arr.filter(x=>x.ins),sm2=a=>a.reduce((q,x)=>q+x.a,0);
@@ -112,10 +113,10 @@ if(!arr.length)h+=`<div class="empty">아직 기록이 없어요<br>오른쪽 �
 const days={};arr.forEach(x=>(days[x.d]=days[x.d]||[]).push(x));
 Object.keys(days).sort().reverse().forEach(d=>{
 const dt=new Date(d+'T00:00:00'),ds=sums(days[d]);
-h+=`<div class="day"><div class="dh"><span>${dt.getMonth()+1}월 ${dt.getDate()}일 (${'일월화수목금토'[dt.getDay()]})</span><span>${ds.i?'+'+won(ds.i)+' ':''}${ds.e?'-'+won(ds.e):''}${ds.u?' (용돈 '+won(ds.u)+')':''}</span></div>`;
+h+=`<div class="day"><div class="dh"><span>${dt.getMonth()+1}월 ${dt.getDate()}일 (${'일월화수목금토'[dt.getDay()]})</span><span>${ds.i?'+'+won(ds.i)+' ':''}${ds.e?'-'+won(ds.e):''}${ds.u?' (이동 '+won(ds.u)+')':''}</span></div>`;
 days[d].slice().reverse().forEach(x=>{
 const c=cat(x.t,x.c);
-h+=`<div class="it" data-id="${x.id}"><div class="del" data-del="${x.id}">삭제</div><div class="in"><div class="ico">${c[1]}</div><div class="mid"><b>${esc(x.m)||x.c}</b><small>${x.c} · ${x.t==='i'?(x.c==='용돈'?'월급에서 이동':'수입'):(x.pn||pname(x.p))}${x.t==='i'&&x.pc>0?' · 월급의 '+x.pc+'%':''}${x.ins?' · <span class="tg">할부 '+x.ins.n+'/'+x.ins.of+'회 · 총'+won(x.ins.total)+'</span>':''}${x.r?' · <span class="tg">'+(x.t==='i'?'고정수입':'고정비')+(x.rf?'('+({w:'매주',m:'매월',y:'매년'})[x.rf]+')':'')+'</span>':''}</small></div><div class="amt ${x.t==='i'?'inc':'exp'}">${x.t==='i'?'+':'-'}${won(x.a)}</div></div></div>`;
+h+=`<div class="it" data-id="${x.id}"><div class="del" data-del="${x.id}">삭제</div><div class="in"><div class="ico">${c[1]}</div><div class="mid"><b>${esc(x.m)||x.c}</b><small>${x.c} · ${x.t==='i'?(MV(x.c)?'월급에서 이동':'수입'):(x.pn||pname(x.p))}${x.t==='i'&&x.c==='용돈'&&x.pc>0?' · 월급의 '+x.pc+'%':''}${x.ins?' · <span class="tg">할부 '+x.ins.n+'/'+x.ins.of+'회 · 총'+won(x.ins.total)+'</span>':''}${x.r?' · <span class="tg">'+(x.t==='i'?'고정수입':'고정비')+(x.rf?'('+({w:'매주',m:'매월',y:'매년'})[x.rf]+')':'')+'</span>':''}</small></div><div class="amt ${x.t==='i'?'inc':'exp'}">${x.t==='i'?'+':'-'}${won(x.a)}</div></div></div>`;
 });
 h+='</div>';
 });
@@ -199,7 +200,7 @@ catch(e){toast('복원 실패: 백업 파일을 찾지 못했어요')}
 }
 const ex=$('#exp');if(ex){
 ex.onclick=()=>dl('gagyebu-backup-'+ymd(new Date())+'.json',JSON.stringify(S),'application/json');
-$('#expx').onclick=()=>{let c='﻿날짜,구분,분류,결제수단,내용,금액,할부(개월)\n';S.tx.slice().sort((a,b)=>a.d<b.d?-1:1).forEach(x=>c+=[x.d,x.t==='i'?(x.c==='용돈'?'용돈(이동)':'수입'):'지출',x.c,x.t==='i'?'':(x.pn||pname(x.p)),'"'+String(x.m||'').replace(/"/g,'""')+'"',x.a,x.i>1?x.i:''].join(',')+'\n');dl('gagyebu.csv',c,'text/csv')};
+$('#expx').onclick=()=>{let c='﻿날짜,구분,분류,결제수단,내용,금액,할부(개월)\n';S.tx.slice().sort((a,b)=>a.d<b.d?-1:1).forEach(x=>c+=[x.d,x.t==='i'?(MV(x.c)?x.c+'(이동)':'수입'):'지출',x.c,x.t==='i'?'':(x.pn||pname(x.p)),'"'+String(x.m||'').replace(/"/g,'""')+'"',x.a,x.i>1?x.i:''].join(',')+'\n');dl('gagyebu.csv',c,'text/csv')};
 $('#imp').onclick=()=>$('#file').click();
 $('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.tx)throw 0;S=d;S.rec=S.rec||[];S.applied=S.applied||{};mig();save();toast('불러왔어요');render()}catch(x){toast('올바른 백업 파일이 아니에요')}};r.readAsText(f)};
 let w=0;const wp=$('#wipe');if(wp)wp.onclick=function(){if(!w){w=1;this.textContent='정말 지울까요? 한 번 더 누르세요';this.style.color='#e8553d';setTimeout(()=>{w=0;this.textContent='모든 기록 지우기';this.style.color=''},3000)}else{S={tx:[],rec:[],budget:0,applied:{}};save();render();toast('모두 지웠어요')}};
@@ -238,7 +239,7 @@ ${ed?'<button class="btn g" id="rm">삭제</button>':''}
 bindNum($('#a'));$('#a').addEventListener('input',updHint);updHint();
 const pd=$('#pd');if(pd){pd.onclick=()=>{f.pc=0;$('#pp').value='';updPc()};$('#pp').oninput=e=>{e.target.value=e.target.value.replace(/\D/g,'');const n=parseInt(e.target.value)||0;f.pc=n>0&&n<=100?n:0;updPc()};$('#d').addEventListener('change',updPc);updPc()}
 sh.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{keep();f.t=b.dataset.t;f.c=f.t==='i'?'월급':'생활비';draw()});
-sh.querySelectorAll('#cs button').forEach(b=>b.onclick=()=>{keep();f.c=b.dataset.c;draw()});
+sh.querySelectorAll('#cs button').forEach(b=>b.onclick=()=>{keep();f.c=b.dataset.c;if(f.c!=='용돈')f.pc=0;draw()});
 sh.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{keep();f.p=b.dataset.p;if(!isCard(f.p))f.i=1;draw()});
 const i1=$('#i1'),inn=$('#in');
 if(i1){
