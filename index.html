@@ -26,9 +26,9 @@
 <div class="toast" id="toast"></div>
 <script>
 (function(){
-const EC=[['생활비','💸'],['식비','🍚'],['카페·간식','☕'],['생활용품','🧴'],['교통','🚌'],['주거·관리비','🏠'],['인터넷·통신','📱'],['의료','💊'],['교육','📚'],['의류·미용','👗'],['문화·여가','🎬'],['기부·헌금','🙏'],['경조사','🎁'],['보험','🛡️'],['세금','🧾'],['기타','📦']];
+const EC=[['생활비','💸'],['식비','🍚'],['카페·간식','☕'],['생활용품','🧴'],['교통','🚌'],['주거·관리비','🏠'],['인터넷·통신','📱'],['의료','💊'],['교육','📚'],['의류·미용','👗'],['문화·여가','🎬'],['기부·헌금','🙏'],['경조사','🎁'],['받을 돈','🤝'],['보험','🛡️'],['세금','🧾'],['기타','📦']];
 const MV=c=>c==='용돈',RC=c=>c==='받을 돈';
-const IC=[['월급','💰'],['용돈','🧧'],['부수입','✨'],['받을 돈','🤝'],['기타수입','📥']];
+const IC=[['월급','💰'],['용돈','🧧'],['부수입','✨'],['기타수입','📥']];
 const cards=()=>S.cards&&S.cards.length===5?S.cards:[1,2,3,4,5].map(i=>'카드'+i);
 const isCard=p=>/^c[1-5]$/.test(p||'')||p==='카드';
 const pname=p=>{const m=/^c([1-5])$/.exec(p||'');return m?cards()[m[1]-1]:p};
@@ -38,7 +38,7 @@ if(f==='w'){const o=[];for(let d=1;d<=L;d++){const ds=k+'-'+pad(d);if(new Date(d
 return[k+'-'+pad(Math.min(r.day,L))]};
 const rlabel=r=>{const f=r.f||'m';return f==='w'?'매주 '+'일월화수목금토'[r.wd]+'요일':f==='y'?'매년 '+r.mo+'월 '+r.day+'일':'매월 '+r.day+'일'};
 const snap=p=>/^c[1-5]$/.test(p||'')?pname(p):undefined;
-const mig=()=>{let c=0;S.tx.concat(S.rec||[]).forEach(x=>{if(x.c==='통신'){x.c='인터넷·통신';c=1}if(x.c==='지출분류'){x.c='용돈';c=1}});S.tx.forEach(x=>{if(!x.pn&&/^c[1-5]$/.test(x.p||'')){x.pn=pname(x.p);c=1}});return c};
+const mig=()=>{let c=0;S.tx.concat(S.rec||[]).forEach(x=>{if(x.c==='통신'){x.c='인터넷·통신';c=1}if(x.c==='지출분류'){x.c='용돈';c=1}if(x.t==='i'&&x.c==='받을 돈'){x.t='e';x.p='계좌';c=1}});S.tx.forEach(x=>{if(!x.pn&&/^c[1-5]$/.test(x.p||'')){x.pn=pname(x.p);c=1}});return c};
 const KEY='gagyebu_v1';
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
@@ -88,12 +88,12 @@ let cur=new Date();cur.setDate(1);
 let tab='list',sm='m',ghOpen=false,wpOpen=false;
 function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',1800)}
 const mk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1);
-function eff(){const o=[],sal=m=>S.tx.reduce((a,y)=>a+(y.t==='i'&&y.c==='월급'&&y.d.startsWith(m)?y.a:0),0);S.tx.forEach(x=>{const n=x.t==='e'&&x.i>1?x.i:1;if(n===1){o.push(x.t==='i'&&x.c==='용돈'&&x.pc>0?{...x,a:Math.round(sal(x.d.slice(0,7))*x.pc/100)}:x);return}
+function eff(){const o=[],sal=m=>S.tx.reduce((a,y)=>a+(y.t==='i'&&y.c==='월급'&&y.d.startsWith(m)?y.a:0),0);S.tx.forEach(x=>{const n=x.t==='e'&&x.i>1?x.i:1;if(n===1){o.push(x.t==='e'&&x.c==='생활비'&&x.pc>0?{...x,a:Math.round(sal(x.d.slice(0,7))*x.pc/100)}:x);return}
 const y=+x.d.slice(0,4),m=+x.d.slice(5,7)-1,d=+x.d.slice(8),b=Math.floor(x.a/n);
 for(let j=0;j<n;j++){const l=new Date(y,m+j+1,0).getDate(),t=new Date(y,m+j,1);
-o.push({...x,d:ymd(new Date(t.getFullYear(),t.getMonth(),Math.min(d,l))),a:j===n-1?x.a-b*(n-1):b,ins:{n:j+1,of:n,total:x.a}})}});S.tx.forEach(x=>{if(x.t==='i'&&RC(x.c)){const y=+x.d.slice(0,4),m=+x.d.slice(5,7);o.push({id:x.id,d:ymd(new Date(y,m,1)),t:'e',c:'생활비',a:-x.a,p:'',pn:'받을 돈',m:(x.m||'받을 돈')+' (받을 돈 차감)'})}});return o}
+o.push({...x,d:ymd(new Date(t.getFullYear(),t.getMonth(),Math.min(d,l))),a:j===n-1?x.a-b*(n-1):b,ins:{n:j+1,of:n,total:x.a}})}});S.tx.forEach(x=>{if(x.t==='e'&&RC(x.c)){const y=+x.d.slice(0,4),m=+x.d.slice(5,7);o.push({id:x.id,d:ymd(new Date(y,m,1)),t:'e',c:'생활비',a:-x.a,p:'',pn:'받을 돈',m:(x.m||'받을 돈')+' (받을 돈 차감)'})}});return o}
 function monthTx(k){return eff().filter(x=>x.d.startsWith(k))}
-function sums(arr){let i=0,e=0,u=0,u1=0,u2=0;arr.forEach(x=>x.t==='x'||(x.t==='i'&&RC(x.c))?0:x.t==='i'?(MV(x.c)?(u+=x.a,u1+=x.a):i+=x.a):e+=x.a);return{i,e,u,u1,u2}}
+function sums(arr){let i=0,e=0,u=0,u1=0,u2=0;arr.forEach(x=>x.t==='x'?0:x.t==='i'?(MV(x.c)?(u+=x.a,u1+=x.a):i+=x.a):e+=x.a);return{i,e,u,u1,u2}}
 function render(){
 $('#fab').style.display=tab==='set'?'none':'flex';
 document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
@@ -123,7 +123,7 @@ const dt=new Date(d+'T00:00:00'),ds=sums(days[d]);
 h+=`<div class="day"><div class="dh"><span>${dt.getMonth()+1}월 ${dt.getDate()}일 (${'일월화수목금토'[dt.getDay()]})</span><span>${ds.i?'+'+won(ds.i)+' ':''}${ds.e?'-'+won(ds.e):''}${ds.u?' (이동 '+won(ds.u)+')':''}</span></div>`;
 days[d].slice().reverse().forEach(x=>{
 const c=cat(x.t,x.c);
-h+=`<div class="it" data-id="${x.id}"><div class="del" data-del="${x.id}">삭제</div><div class="in"><div class="ico">${c[1]}</div><div class="mid"><b>${esc(x.m)||x.c}</b><small>${x.c} · ${x.t==='x'?(x.k==='pt'?'포인트 사용 · 수입·지출 아님':'충전 · 계좌에서 이동'):x.t==='i'?(MV(x.c)?'월급에서 이동 · 수입 아님':RC(x.c)?'다음달 생활비에서 차감 · 수입 아님':x.k==='in'?'입금':'수입'):(x.k==='ch'?'충전 · ':'')+(x.pn||pname(x.p))}${x.t==='i'&&x.c==='용돈'&&x.pc>0?' · 월급의 '+x.pc+'%':''}${x.ins?' · <span class="tg">할부 '+x.ins.n+'/'+x.ins.of+'회 · 총'+won(x.ins.total)+'</span>':''}${x.r?' · <span class="tg">'+(x.t==='i'?'고정수입':'고정비')+(x.rf?'('+({w:'매주',m:'매월',y:'매년'})[x.rf]+')':'')+'</span>':''}</small></div><div class="amt ${x.t==='i'&&!MV(x.c)&&!RC(x.c)||x.t==='e'&&x.a<0?'inc':x.t==='x'||x.t==='i'?'':'exp'}"${x.t==='x'||(x.t==='i'&&(MV(x.c)||RC(x.c)))?' style="color:var(--sub)"':''}>${x.t==='i'&&!MV(x.c)&&!RC(x.c)||x.t==='e'&&x.a<0?'+':x.t==='x'||x.t==='i'?'':'-'}${won(Math.abs(x.a))}</div></div></div>`;
+h+=`<div class="it" data-id="${x.id}"><div class="del" data-del="${x.id}">삭제</div><div class="in"><div class="ico">${c[1]}</div><div class="mid"><b>${esc(x.m)||x.c}</b><small>${x.c} · ${x.t==='x'?(x.k==='pt'?'포인트 사용 · 수입·지출 아님':'충전 · 계좌에서 이동'):x.t==='i'?(MV(x.c)?'월급에서 이동 · 수입 아님':x.k==='in'?'입금':'수입'):(x.k==='ch'?'충전 · ':'')+(x.pn||pname(x.p))}${x.t==='e'&&x.c==='생활비'&&x.pc>0?' · 월급의 '+x.pc+'%':''}${x.ins?' · <span class="tg">할부 '+x.ins.n+'/'+x.ins.of+'회 · 총'+won(x.ins.total)+'</span>':''}${x.r?' · <span class="tg">'+(x.t==='i'?'고정수입':'고정비')+(x.rf?'('+({w:'매주',m:'매월',y:'매년'})[x.rf]+')':'')+'</span>':''}</small></div><div class="amt ${x.t==='i'&&!MV(x.c)||x.t==='e'&&x.a<0?'inc':x.t==='x'||x.t==='i'?'':'exp'}"${x.t==='x'||(x.t==='i'&&MV(x.c))?' style="color:var(--sub)"':''}>${x.t==='i'&&!MV(x.c)||x.t==='e'&&x.a<0?'+':x.t==='x'||x.t==='i'?'':'-'}${won(Math.abs(x.a))}</div></div></div>`;
 });
 h+='</div>';
 });
@@ -186,7 +186,7 @@ const pv=$('#pv');if(pv){pv.onclick=()=>{cur.setMonth(cur.getMonth()-1);render()
 document.querySelectorAll('[data-sm]').forEach(b=>b.onclick=()=>{sm=b.dataset.sm;const y=scrollY;render();scrollTo(0,y)});
 const ar=$('#applyrec');if(ar)ar.onclick=()=>{
 const ap=S.applied[k]=S.applied[k]||[];
-const td=ymd(new Date());S.rec.forEach(r=>{if(ap.includes(r.id))return;const ds=gd(r,k);ds.filter(d=>d<=td&&!S.tx.some(t=>t.ri===r.id&&t.d===d)).forEach(d=>S.tx.push({id:uid(),d,t:r.t,a:r.a,c:r.c,p:r.p,pn:snap(r.p),i:r.i||1,m:r.m,r:1,rf:r.f||'m',ri:r.id,k:r.k}));if(ds.every(d=>d<=td))ap.push(r.id)});
+const td=ymd(new Date());S.rec.forEach(r=>{if(ap.includes(r.id))return;const ds=gd(r,k);ds.filter(d=>d<=td&&!S.tx.some(t=>t.ri===r.id&&t.d===d)).forEach(d=>S.tx.push({id:uid(),d,t:r.t,a:r.a,c:r.c,p:r.p,pn:snap(r.p),i:r.i||1,m:r.m,r:1,rf:r.f||'m',ri:r.id,k:r.k,pc:r.pc}));if(ds.every(d=>d<=td))ap.push(r.id)});
 save();render();toast('고정항목을 넣었어요')};
 document.querySelectorAll('.it').forEach(el=>swipe(el));
 document.querySelectorAll('[data-rd]').forEach(b=>b.onclick=()=>{S.rec=S.rec.filter(r=>r.id!==b.dataset.rd);save();render()});
@@ -207,7 +207,7 @@ catch(e){toast('복원 실패: 백업 파일을 찾지 못했어요')}
 }
 const ex=$('#exp');if(ex){
 ex.onclick=()=>dl('gagyebu-backup-'+ymd(new Date())+'.json',JSON.stringify(S),'application/json');
-$('#expx').onclick=()=>{let c='﻿날짜,구분,분류,결제수단,내용,금액,할부(개월)\n';S.tx.slice().sort((a,b)=>a.d<b.d?-1:1).forEach(x=>c+=[x.d,x.t==='x'?(x.k==='pt'?'포인트(사용)':'충전(이동)'):x.t==='i'?(MV(x.c)?x.c+'(이동)':RC(x.c)?'받을돈(다음달 차감)':'수입'):'지출',x.c,x.t==='i'||x.t==='x'?'':(x.pn||pname(x.p)),'"'+String(x.m||'').replace(/"/g,'""')+'"',x.a,x.i>1?x.i:''].join(',')+'\n');dl('gagyebu.csv',c,'text/csv')};
+$('#expx').onclick=()=>{let c='﻿날짜,구분,분류,결제수단,내용,금액,할부(개월)\n';S.tx.slice().sort((a,b)=>a.d<b.d?-1:1).forEach(x=>c+=[x.d,x.t==='x'?(x.k==='pt'?'포인트(사용)':'충전(이동)'):x.t==='i'?(MV(x.c)?x.c+'(이동)':'수입'):'지출',x.c,x.t==='i'||x.t==='x'?'':(x.pn||pname(x.p)),'"'+String(x.m||'').replace(/"/g,'""')+'"',x.a,x.i>1?x.i:''].join(',')+'\n');dl('gagyebu.csv',c,'text/csv')};
 $('#imp').onclick=()=>$('#file').click();
 $('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.tx)throw 0;S=d;S.rec=S.rec||[];S.applied=S.applied||{};mig();save();toast('불러왔어요');render()}catch(x){toast('올바른 백업 파일이 아니에요')}};r.readAsText(f)};
 let w=0;const wp=$('#wipe');if(wp)wp.onclick=function(){if(!w){w=1;this.textContent='정말 지울까요? 한 번 더 누르세요';this.style.color='#e8553d';setTimeout(()=>{w=0;this.textContent='모든 기록 지우기';this.style.color=''},3000)}else{S={tx:[],rec:[],budget:0,applied:{}};save();render();toast('모두 지웠어요')}};
@@ -236,7 +236,7 @@ sh.innerHTML=`<div class="seg"><button data-t="e" class="${f.t==='e'?'on':''}">�
 ${f.t==='x'?`<div class="f">계정</div><div class="cg" style="grid-template-columns:repeat(2,1fr)">${XC.map(c=>`<button class="cd ${f.xa===c[0]?'on':''}" data-xa="${c[0]}" style="padding:5px 2px;font-size:14px">${c[1]} ${c[0]}<br><small style="font-weight:400">잔액 ${won(bal(c[0]))}원</small></button>`).join('')}</div><div class="chips" style="margin-top:6px">${(f.xa==='동백전'?[['ch','충전']]:[['ch','충전'],['in','입금']]).map(m=>`<button data-xm="${m[0]}" class="${f.xm===m[0]?'on':''}">${m[1]}</button>`).join('')}</div><div style="color:var(--sub);font-size:12.5px;margin-top:5px">${f.xm==='ch'?'충전하면 지출로 잡혀요':f.xm==='in'?'입금하면 수입으로 잡혀요':'포인트 사용 기록 (수입·지출 아님)'}</div>${f.xa==='계좌분류'&&!ed&&f.xm!=='pt'?`<div class="chips" style="margin-top:6px"><button data-fx class="${f.fx?'on':''}">🔁 매월 고정</button></div><div style="color:var(--sub);font-size:12.5px;margin-top:4px">${f.fx?'매달 같은 금액이 고정항목으로 들어가요 (끄려면 다시 탭)':'이번 한 번만 기록해요'}</div>`:''}`:''}
 <div class="f">금액</div><input class="amtin" id="a" inputmode="numeric" placeholder="0" value="${f.a?won(f.a):''}">
 ${f.t==='e'&&isDB(f.p)?`<div class="inst">${[['ch','충전'],['us','사용'],['pt','포인트']].map(m=>`<button data-dm="${m[0]}" class="${f.dm===m[0]?'on':''}">${m[1]}</button>`).join('')}<small style="color:var(--sub)">${f.dm==='ch'?'계좌→동백전 이동':f.dm==='pt'?'수입·지출 아님':'잔액 '+won(bal('동백전'))+'원'}</small></div>`:f.t==='e'&&isCard(f.p)?`<div class="inst"><button id="i1" class="${(f.i||1)<2?'on':''}">일시불</button><label class="ib ${(f.i||1)>=2?'on':''}"><span>할부</span><input id="in" inputmode="numeric" maxlength="2" value="${(f.i||1)>=2?f.i:''}"><span>개월</span></label><small id="ih" style="color:var(--sub)"></small></div>`:''}
-${f.t==='i'&&f.c==='용돈'?`<div class="inst"><button id="pd" class="${f.pc?'':'on'}">직접 입력</button><label class="ib ${f.pc?'on':''}"><span>월급의</span><input id="pp" inputmode="numeric" maxlength="3" value="${f.pc||''}"><span>%</span></label></div><div id="ph" style="color:var(--sub);font-size:12.5px;margin-top:6px"></div>`:''}
+${f.t==='e'&&f.c==='생활비'?`<div class="inst"><button id="pd" class="${f.pc?'':'on'}">직접 입력</button><label class="ib ${f.pc?'on':''}"><span>월급의</span><input id="pp" inputmode="numeric" maxlength="3" value="${f.pc||''}"><span>%</span></label></div><div id="ph" style="color:var(--sub);font-size:12.5px;margin-top:6px"></div>`:''}
 <div class="f">날짜</div><input class="in2" type="date" id="d" value="${f.d}">
 ${(f.t==='x'?f.xm==='us':!(f.t==='e'&&isDB(f.p)&&f.dm!=='us'))?`<div class="f">분류</div><div class="chips" id="cs">${cats.map(c=>`<button data-c="${c[0]}" class="${f.c===c[0]?'on':''}">${c[1]} ${c[0]}</button>`).join('')}</div>`:''}
 ${f.t==='e'?`<div class="f">결제수단<button class="lk" id="en">${en?'완료':'✎ 카드 이름 바꾸기'}</button></div>
@@ -251,7 +251,7 @@ const mi=$('#m'),sgd=()=>{const q=mi.value.trim().toLowerCase(),o=$('#sg');if(!q
 bindNum($('#a'));$('#a').addEventListener('input',updHint);updHint();
 const pd=$('#pd');if(pd){pd.onclick=()=>{f.pc=0;$('#pp').value='';updPc()};$('#pp').oninput=e=>{e.target.value=e.target.value.replace(/\D/g,'');const n=parseInt(e.target.value)||0;f.pc=n>0&&n<=100?n:0;updPc()};$('#d').addEventListener('change',updPc);updPc()}
 sh.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{keep();f.t=b.dataset.t;f.c=f.t==='i'?'월급':'생활비';draw()});
-sh.querySelectorAll('#cs button').forEach(b=>b.onclick=()=>{keep();f.c=b.dataset.c;if(f.c!=='용돈')f.pc=0;draw()});
+sh.querySelectorAll('#cs button').forEach(b=>b.onclick=()=>{keep();f.c=b.dataset.c;if(f.c!=='생활비')f.pc=0;draw()});
 sh.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{keep();f.p=b.dataset.p;if(!isCard(f.p))f.i=1;draw()});
 const i1=$('#i1'),inn=$('#in');
 if(i1){
@@ -275,11 +275,11 @@ let T=f.t,C=f.c,P=f.p,XK=f.k;const viaTab=T==='x';if(T==='e'&&isDB(P)&&f.dm!=='u
 if(T==='x'){if(viaTab&&f.xm==='ch'){T='e';C=f.xa;P='계좌';XK='ch'}else if(viaTab&&f.xm==='in'){T='i';C=f.xa;P='';XK='in'}else{C=f.xa;XK=f.xm;P=''}}
 const ii=(T==='e'&&isCard(P)&&!isDB(P))?(f.i||1):1;
 const np=T==='i'||T==='x'?'':P;
-if(ed){const pn=(tx.p===np&&tx.pn)?tx.pn:snap(np);Object.assign(tx,{t:T,a:f.a,c:C,p:np,pn,i:ii,pc:(T==='i'&&C==='용돈'&&f.pc>0)?f.pc:0,m:f.m,d:f.d,k:XK})}
+if(ed){const pn=(tx.p===np&&tx.pn)?tx.pn:snap(np);Object.assign(tx,{t:T,a:f.a,c:C,p:np,pn,i:ii,pc:(T==='e'&&C==='생활비'&&f.pc>0)?f.pc:0,m:f.m,d:f.d,k:XK})}
 else{
-const rc=viaTab?(f.xa==='계좌분류'&&f.fx&&f.xm!=='pt'?'m':''):(T==='x'?'':f.rp||''),row={id:uid(),d:f.d,t:T,a:f.a,c:C,p:np,pn:snap(np),i:ii,pc:(T==='i'&&C==='용돈'&&f.pc>0)?f.pc:0,m:f.m,r:rc?1:0,rf:rc||undefined,k:XK};
+const rc=viaTab?(f.xa==='계좌분류'&&f.fx&&f.xm!=='pt'?'m':''):(T==='x'?'':f.rp||''),row={id:uid(),d:f.d,t:T,a:f.a,c:C,p:np,pn:snap(np),i:ii,pc:(T==='e'&&C==='생활비'&&f.pc>0)?f.pc:0,m:f.m,r:rc?1:0,rf:rc||undefined,k:XK};
 S.tx.push(row);
-if(rc){const rid=uid();row.ri=rid;S.rec.push({id:rid,k:XK,t:T,a:f.a,c:C,p:row.p,i:ii,m:f.m,f:rc,day:+f.d.slice(8),mo:+f.d.slice(5,7),wd:new Date(f.d+'T00:00:00').getDay(),s:f.d});const k=f.d.slice(0,7);if(rc!=='w')(S.applied[k]=S.applied[k]||[]).push(rid)}
+if(rc){const rid=uid();row.ri=rid;S.rec.push({id:rid,k:XK,pc:row.pc,t:T,a:f.a,c:C,p:row.p,i:ii,m:f.m,f:rc,day:+f.d.slice(8),mo:+f.d.slice(5,7),wd:new Date(f.d+'T00:00:00').getDay(),s:f.d});const k=f.d.slice(0,7);if(rc!=='w')(S.applied[k]=S.applied[k]||[]).push(rid)}
 }
 if(f.m&&f.m.trim()){S.mw=[f.m.trim()].concat((S.mw||[]).filter(w=>w!==f.m.trim())).slice(0,1000)}
 save();
