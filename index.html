@@ -100,7 +100,7 @@ bind(k);
 }
 function vList(k){
 const arr=monthTx(k),{i,e,u}=sums(arr);
-let h=`<div class="sum"><div class="row"><span>수입</span><span class="inc">${won(i)}원</span></div>${u?`<div class="row"><span>용돈 (월급에서 차감)</span><span class="exp">-${won(u)}원</span></div>`:''}<div class="row"><span>지출</span><span class="exp">${won(e)}원</span></div><div class="row big"><span style="color:var(--ink)">남은 돈</span><span class="${i-u-e<0?'exp':'inc'}">${won(i-u-e)}원</span></div>`;
+let h=`<div class="sum"><div class="row"><span>수입</span><span class="inc">${won(i)}원</span></div>${u?`<div class="row" style="font-size:13px"><span>　└ 월급 (용돈 제외)</span><span>${won(i-u)}원</span></div><div class="row" style="font-size:13px"><span>　└ 용돈 (월급에서 이동)</span><span>${won(u)}원</span></div>`:''}<div class="row"><span>지출</span><span class="exp">${won(e)}원</span></div><div class="row big"><span style="color:var(--ink)">남은 돈</span><span class="${i-e<0?'exp':'inc'}">${won(i-e)}원</span></div>`;
 if(S.budget>0){const p=Math.min(100,e/S.budget*100);h+=`<div class="bud"><div class="bar"><i class="${e>S.budget?'over':''}" style="width:${p}%"></i></div><small><span>이번 달 예산 ${won(S.budget)}원</span><span>${e>S.budget?won(e-S.budget)+'원 초과':won(S.budget-e)+'원 남음'}</span></small></div>`}
 h+='</div>';
 const pend=S.rec.filter(r=>!(S.applied[k]||[]).includes(r.id)&&gd(r,k).length);
@@ -109,10 +109,10 @@ if(!arr.length)h+=`<div class="empty">아직 기록이 없어요<br>오른쪽 �
 const days={};arr.forEach(x=>(days[x.d]=days[x.d]||[]).push(x));
 Object.keys(days).sort().reverse().forEach(d=>{
 const dt=new Date(d+'T00:00:00'),ds=sums(days[d]);
-h+=`<div class="day"><div class="dh"><span>${dt.getMonth()+1}월 ${dt.getDate()}일 (${'일월화수목금토'[dt.getDay()]})</span><span>${ds.i?'+'+won(ds.i)+' ':''}${(ds.e+ds.u)?'-'+won(ds.e+ds.u):''}</span></div>`;
+h+=`<div class="day"><div class="dh"><span>${dt.getMonth()+1}월 ${dt.getDate()}일 (${'일월화수목금토'[dt.getDay()]})</span><span>${ds.i?'+'+won(ds.i)+' ':''}${ds.e?'-'+won(ds.e):''}${ds.u?' (용돈 '+won(ds.u)+')':''}</span></div>`;
 days[d].slice().reverse().forEach(x=>{
 const c=cat(x.t,x.c);
-h+=`<div class="it" data-id="${x.id}"><div class="del" data-del="${x.id}">삭제</div><div class="in"><div class="ico">${c[1]}</div><div class="mid"><b>${esc(x.m)||x.c}</b><small>${x.c} · ${x.t==='i'?(x.c==='용돈'?'월급에서 차감':'수입'):(x.pn||pname(x.p))}${x.t==='i'&&x.pc>0?' · 월급의 '+x.pc+'%':''}${x.ins?' · 할부 '+x.ins.n+'/'+x.ins.of+'회 (총 '+won(x.ins.total)+')':''}${x.r?' · 🔁':''}</small></div><div class="amt ${x.t==='i'&&x.c!=='용돈'?'inc':'exp'}">${x.t==='i'&&x.c!=='용돈'?'+':'-'}${won(x.a)}</div></div></div>`;
+h+=`<div class="it" data-id="${x.id}"><div class="del" data-del="${x.id}">삭제</div><div class="in"><div class="ico">${c[1]}</div><div class="mid"><b>${esc(x.m)||x.c}</b><small>${x.c} · ${x.t==='i'?(x.c==='용돈'?'월급에서 이동':'수입'):(x.pn||pname(x.p))}${x.t==='i'&&x.pc>0?' · 월급의 '+x.pc+'%':''}${x.ins?' · 할부 '+x.ins.n+'/'+x.ins.of+'회 (총 '+won(x.ins.total)+')':''}${x.r?' · 🔁':''}</small></div><div class="amt ${x.t==='i'?'inc':'exp'}">${x.t==='i'?'+':'-'}${won(x.a)}</div></div></div>`;
 });
 h+='</div>';
 });
@@ -138,9 +138,9 @@ return h;
 }
 function vDiag(){
 const y=cur.getFullYear();let rows=[];
-if(sm==='m'){for(let n=0;n<12;n++){const q=sums(monthTx(y+'-'+pad(n+1)));rows.push({l:(n+1)+'월',i:q.i-q.u,e:q.e,c:n===cur.getMonth()})}}
+if(sm==='m'){for(let n=0;n<12;n++){const q=sums(monthTx(y+'-'+pad(n+1)));rows.push({l:(n+1)+'월',i:q.i,e:q.e,c:n===cur.getMonth()})}}
 else{const E=eff(),ys=[...new Set(E.map(x=>+x.d.slice(0,4)))];if(!ys.includes(y))ys.push(y);ys.sort();
-ys.forEach(Y=>{const q=sums(E.filter(x=>x.d.startsWith(Y+'-')));rows.push({l:Y+'년',i:q.i-q.u,e:q.e,c:Y===y})})}
+ys.forEach(Y=>{const q=sums(E.filter(x=>x.d.startsWith(Y+'-')));rows.push({l:Y+'년',i:q.i,e:q.e,c:Y===y})})}
 const mx=Math.max(1,...rows.map(r=>Math.max(r.i,r.e))),T=rows.reduce((a,r)=>({i:a.i+r.i,e:a.e+r.e}),{i:0,e:0});
 let h=`<div class="card"><h3>${sm==='m'?y+'년 월통계':'년통계'}</h3><div class="gseg"><button data-sm="m" class="${sm==='m'?'on':''}">월통계</button><button data-sm="y" class="${sm==='y'?'on':''}">년통계</button></div>
 <div class="lg"><span><b style="background:var(--inc)"></b>수입</span><span><b style="background:var(--pri)"></b>지출</span></div>
@@ -196,7 +196,7 @@ catch(e){toast('복원 실패: 백업 파일을 찾지 못했어요')}
 }
 const ex=$('#exp');if(ex){
 ex.onclick=()=>dl('gagyebu-backup-'+ymd(new Date())+'.json',JSON.stringify(S),'application/json');
-$('#expx').onclick=()=>{let c='﻿날짜,구분,분류,결제수단,내용,금액,할부(개월)\n';S.tx.slice().sort((a,b)=>a.d<b.d?-1:1).forEach(x=>c+=[x.d,x.t==='i'?(x.c==='용돈'?'용돈(차감)':'수입'):'지출',x.c,x.t==='i'?'':(x.pn||pname(x.p)),'"'+String(x.m||'').replace(/"/g,'""')+'"',x.a,x.i>1?x.i:''].join(',')+'\n');dl('gagyebu.csv',c,'text/csv')};
+$('#expx').onclick=()=>{let c='﻿날짜,구분,분류,결제수단,내용,금액,할부(개월)\n';S.tx.slice().sort((a,b)=>a.d<b.d?-1:1).forEach(x=>c+=[x.d,x.t==='i'?(x.c==='용돈'?'용돈(이동)':'수입'):'지출',x.c,x.t==='i'?'':(x.pn||pname(x.p)),'"'+String(x.m||'').replace(/"/g,'""')+'"',x.a,x.i>1?x.i:''].join(',')+'\n');dl('gagyebu.csv',c,'text/csv')};
 $('#imp').onclick=()=>$('#file').click();
 $('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.tx)throw 0;S=d;S.rec=S.rec||[];S.applied=S.applied||{};mig();save();toast('불러왔어요');render()}catch(x){toast('올바른 백업 파일이 아니에요')}};r.readAsText(f)};
 let w=0;const wp=$('#wipe');if(wp)wp.onclick=function(){if(!w){w=1;this.textContent='정말 지울까요? 한 번 더 누르세요';this.style.color='#e8553d';setTimeout(()=>{w=0;this.textContent='모든 기록 지우기';this.style.color=''},3000)}else{S={tx:[],rec:[],budget:0,applied:{}};save();render();toast('모두 지웠어요')}};
