@@ -32,6 +32,11 @@ const IC=[['월급','💰'],['용돈','🧧'],['부수입','✨'],['기타수입
 const cards=()=>S.cards&&S.cards.length===5?S.cards:[1,2,3,4,5].map(i=>'카드'+i);
 const isCard=p=>/^c[1-5]$/.test(p||'')||p==='카드';
 const acAmt=()=>{const k=ymd(new Date()).slice(0,7);let a=0;(S.acm||[]).slice().sort((x,y)=>x.s<y.s?-1:1).forEach(e=>{if(e.s<=k)a=e.a});return a};
+const cts=()=>S.ct&&S.ct.length===5?S.ct:['c','c','c','c','c'];
+const isNC=p=>isCard(p)&&!/^c[1-5]$/.test(p||'')||/^c[1-5]$/.test(p||'')&&cts()[p[1]-1]!=='d';
+const pmo=k=>ymd(new Date(+k.slice(0,4),+k.slice(5)-2,1)).slice(0,7),nmo=k=>ymd(new Date(+k.slice(0,4),+k.slice(5),1)).slice(0,7);
+const outOf=(k,E)=>{let lv=0,fx=0,fa=0,fc=0;const cm={},pk=pmo(k);E.forEach(x=>{if(x.t!=='e')return;const m=x.d.slice(0,7);if(m===pk&&isNC(x.p)){const q=/^c[1-5]$/.test(x.p)?x.p:'old';cm[q]=(cm[q]||0)+x.a}if(m===k&&!isNC(x.p)){if(x.c==='생활비')lv+=x.a;else if(x.r||x.ac)fx+=x.a}if(m===k&&x.c!=='생활비'&&(x.r||x.ac)){fa+=x.a;if(isNC(x.p))fc+=x.a}});const ov=(S.cb&&S.cb[k])||{};Object.keys(ov).forEach(q=>{if(!(q in cm))cm[q]=0});let cd=0;const rows=Object.keys(cm).sort().map(q=>{const ef=ov[q]!=null?ov[q]:cm[q];cd+=ef;return{q,ef,ed:ov[q]!=null}});return{lv,cd,fx,fa,fc,rows,t:lv+cd+fx}};
+const bkOf=(k,E)=>{let m=k;for(let n=0;n<=36;n++){if(S.bk&&S.bk[m]!=null){let v=S.bk[m];if(m===k)return[v,0];for(let c=m;c<k;c=nmo(c))v-=outOf(c,E).t;return[v,1]}m=pmo(m)}return null};
 const dn=n=>/동백전/.test(n||'')&&!/^🌺/.test(n)?'🌺 '+n:n;
 const pname=p=>{const m=/^c([1-5])$/.exec(p||'');return m?cards()[m[1]-1]:p};
 const gd=(r,k)=>{const f=r.f||'m',L=new Date(+k.slice(0,4),+k.slice(5),0).getDate(),sm=(r.s||'').slice(0,7);if(sm&&k<sm)return[];
@@ -119,6 +124,8 @@ const fx=arr.filter(x=>x.t==='e'&&x.r),ins=arr.filter(x=>x.ins),sm2=a=>a.reduce(
 if(fx.length||ins.length)h+=`<div style="font-size:12.5px;color:var(--sub);margin:8px 4px 0;line-height:1.7">${fx.length?`고정비 ${fx.length}건 ${won(sm2(fx))}원`:''}${fx.length&&ins.length?' · ':''}${ins.length?`할부 ${ins.length}건 ${won(sm2(ins))}원`:''}</div>`;
 const ac=['동백전','계좌분류'].filter(a=>S.tx.some(x=>(x.c===a&&(x.t==='x'||x.k==='ch'||x.k==='in'))||x.p===a||x.pn===a)||(a==='계좌분류'&&(S.acm||[]).length>0));
 if(ac.length)h+=`<div style="font-size:12.5px;color:var(--sub);margin:4px 4px 0">${ac.map(a=>cat('x',a)[1]+' '+a+' 잔액 <b style="color:'+(bal(a)<0?'var(--exp)':'var(--ink)')+'">'+won(bal(a))+'원</b>').join(' · ')}</div>`;
+{const E=eff(),ob=outOf(k,E),bk=bkOf(k,E),rw=(a,b,st)=>`<div class="row"${st?' style="'+st+'"':''}><span>${a}</span><span>${b}</span></div>`;
+h+=`<div class="sum" style="margin-top:6px;padding:6px 12px"><div style="font-size:13px;font-weight:700;margin-bottom:2px">💸 이번 달 통장에서 빠지는 돈</div>${rw('생활비',won(ob.lv)+'원','font-size:13px')}${rw('카드 (지난달 사용분)',won(ob.cd)+'원','font-size:13px')}${ob.rows.map(r=>`<div class="row" style="font-size:12.5px;padding-left:14px"><span>└ ${r.q==='old'?'카드(구분 전)':esc(dn(cards()[r.q[1]-1]))}${r.ed?' <small style="color:var(--sub)">수정됨</small>':''}</span><input class="in2 cb" data-ck="${r.q}" inputmode="numeric" style="width:110px;text-align:right;padding:2px 8px;font-size:13px" value="${won(r.ef)}"></div>`).join('')}${ob.rows.length?'<div style="font-size:12px;color:var(--sub);padding-left:14px">실제 청구액으로 고칠 수 있어요 (칸을 비우면 자동 계산)</div>':''}${rw('고정비 (카드·현금 모두)',won(ob.fa)+'원','font-size:13px')}${ob.fc?'<div style="font-size:12px;color:var(--sub);padding-left:14px">└ 일반카드 '+won(ob.fc)+'원은 다음 달 카드값에 들어가서 합계에서 제외</div>':''}${rw('합계','<b class="exp">'+won(ob.t)+'원</b>')}<div class="row"><span>통장잔고 (월초)${bk&&bk[1]?' <small style="color:var(--sub)">이월</small>':''}</span><input id="bk" class="in2" inputmode="numeric" placeholder="입력" style="width:130px;text-align:right;padding:3px 8px" value="${bk?won(bk[0]):''}"></div>${bk?`<div class="row big"><span style="color:var(--ink)">빠진 후 남는 돈</span><span class="${bk[0]-ob.t<0?'exp':'inc'}">${won(bk[0]-ob.t)}원</span></div>`:'<div style="font-size:12px;color:var(--sub);margin-top:3px">통장잔고를 넣으면 남는 돈이 계산돼요</div>'}</div>`}
 const td=ymd(new Date()),due=(r,k)=>gd(r,k).filter(d=>d<=td&&!S.tx.some(t=>t.ri===r.id&&t.d===d));
 const pend=S.rec.filter(r=>!(S.applied[k]||[]).includes(r.id)&&due(r,k).length);
 if(pend.length)h+=`<button class="btn" id="applyrec">🔁 고정항목 ${pend.length}건 이번 달에 넣기</button>`;
@@ -188,6 +195,8 @@ h+=`<div class="card" id="ghcard"><h3>GitHub 자동 백업</h3><div style="color
 return h;
 }
 function bind(k){
+document.querySelectorAll('.cb').forEach(el=>{bindNum(el);el.onchange=()=>{const v=el.value.replace(/\D/g,'');S.cb=S.cb||{};const o=S.cb[k]=S.cb[k]||{};if(v==='')delete o[el.dataset.ck];else o[el.dataset.ck]=parseInt(v);save();render()}});
+const bk=$('#bk');if(bk){bindNum(bk);bk.onchange=()=>{const v=bk.value.replace(/\D/g,'');S.bk=S.bk||{};if(v==='')delete S.bk[k];else S.bk[k]=parseInt(v);save();render()}}
 const pv=$('#pv');if(pv){pv.onclick=()=>{cur.setMonth(cur.getMonth()-1);render()};$('#nx').onclick=()=>{cur.setMonth(cur.getMonth()+1);render()}}
 document.querySelectorAll('[data-sm]').forEach(b=>b.onclick=()=>{sm=b.dataset.sm;const y=scrollY;render();scrollTo(0,y)});
 const ar=$('#applyrec');if(ar)ar.onclick=()=>{
@@ -246,6 +255,7 @@ ${f.t==='e'&&f.p==='계좌분류'?`<div class="inst" style="flex-wrap:wrap">${[[
 ${!(f.t==='e'&&(isDB(f.p)||f.p==='계좌분류')&&f.dm!=='us')?`<div class="f">분류</div><div class="chips" id="cs">${cats.map(c=>`<button data-c="${c[0]}" class="${f.c===c[0]?'on':''}">${c[1]} ${c[0]}</button>`).join('')}</div>`:''}
 ${f.t==='e'?`<div class="f">결제수단<button class="lk" id="en">${en?'완료':'✎ 카드 이름 바꾸기'}</button></div>
 <div class="cg">${[1,2,3,4,5].map(i=>en?`<input class="cn" data-i="${i-1}" maxlength="6" value="${esc(cards()[i-1])}">`:`<button class="cd ${f.p==='c'+i?'on':''}" data-p="c${i}">${esc(dn(cards()[i-1]))}</button>`).join('')}</div>
+${en?`<div class="cg" style="margin-top:4px">${[1,2,3,4,5].map(i=>`<button class="cd ${cts()[i-1]==='d'?'on':''}" data-ct="${i-1}">${cts()[i-1]==='d'?'즉시':'일반'}</button>`).join('')}</div><div style="color:var(--sub);font-size:12px;margin-top:3px">즉시 = 동백전·직불카드(현금처럼 바로 출금) / 일반 = 다음 달에 출금 (기본)</div>`:''}
 <div class="chips" style="margin-top:6px">${['현금','계좌','계좌분류'].map(p=>`<button data-p="${p}" class="${f.p===p?'on':''}">${p}</button>`).join('')}</div>`:''}
 <div class="f">내용 (선택)</div><input class="in2" id="m" placeholder="예: 마트 장보기" value="${esc(f.m)}" autocomplete="off"><div class="chips" id="sg" style="margin-top:4px"></div>
 ${ed?'':`<div class="f">반복 (고정항목으로 등록)</div><div class="chips">${[['','안 함'],['w','매주'],['m','매월'],['y','매년']].map(x=>`<button data-rp="${x[0]}" class="${(f.rp||'')===x[0]?'on':''}">${x[1]}</button>`).join('')}</div>`}
@@ -266,6 +276,7 @@ inn.oninput=()=>{inn.value=inn.value.replace(/\D/g,'');const n=parseInt(inn.valu
 }
 sh.querySelectorAll('[data-dm]').forEach(b=>b.onclick=()=>{keep();f.dm=b.dataset.dm;if(!f.rpSet&&f.p==='계좌분류')f.rp=f.dm==='us'?'':'m';draw()});
 sh.querySelectorAll('[data-rp]').forEach(b=>b.onclick=()=>{keep();f.rp=b.dataset.rp;f.rpSet=1;draw()});
+sh.querySelectorAll('[data-ct]').forEach(b=>b.onclick=()=>{keep();S.ct=cts().slice();S.ct[+b.dataset.ct]=S.ct[+b.dataset.ct]==='d'?'c':'d';save();render();draw()});
 const eb=$('#en');if(eb)eb.onclick=()=>{keep();en=!en;draw()};
 $('#cl').onclick=close;
 if(ed){let w=0;$('#rm').onclick=function(){if(!w){w=1;this.textContent='한 번 더 누르면 삭제돼요';this.style.color='#e8553d'}else{S.tx=S.tx.filter(t=>t.id!==tx.id);save();close();render();toast('삭제했어요')}}}
