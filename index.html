@@ -250,7 +250,7 @@ el.addEventListener('touchend',()=>{inn.style.transition='';if(mv){open=dx<-40;i
 inn.onclick=()=>{if(mv){mv=false;return}if(open){open=false;inn.style.transform='';setTimeout(()=>el.querySelector('.del').style.visibility='',200);return}{if(el.dataset.id.startsWith('ac')){toast('매월 자동 충전이에요 (계좌분류 입력창에서 금액 변경)');return}const t=S.tx.find(t=>t.id===el.dataset.id);if(t&&t.pc>0&&t.c==='생활비'){const v=eff().find(x=>x.id===t.id);if(v)t.a=v.a}t?openSheet(t):openSheet(eff().find(x=>x.id===el.dataset.id),1)}};
 el.querySelector('.del').onclick=()=>{if(el.dataset.id.startsWith('ac')){toast('금액 변경은 지출에서 계좌분류를 선택하세요');return}if(el.dataset.id.startsWith('lv')){openSheet(eff().find(x=>x.id===el.dataset.id),1);return}S.tx=S.tx.filter(t=>t.id!==el.dataset.id);save();render();toast('삭제했어요')};
 }
-const top=(t,k,ok)=>{const m={};S.tx.forEach(x=>{if(x.t===t&&x[k]&&x.c!=='계좌분류'&&ok(x[k]))m[x[k]]=(m[x[k]]||0)+1});return Object.keys(m).sort((a,b)=>m[b]-m[a])[0]};
+const top=(t,k,ok)=>{const m={};S.tx.forEach(x=>{if(x.t===t&&x[k]&&x.c!=='계좌분류'&&!x.r&&!x.ri&&!x.k&&ok(x[k]))m[x[k]]=(m[x[k]]||0)+1});return Object.keys(m).sort((a,b)=>m[b]-m[a])[0]};
 const dc=t=>top(t,'c',()=>1)||(t==='i'?'월급':'생활비'),dp=()=>top('e','p',p=>/^c[1-5]$/.test(p)||p==='현금'||p==='계좌')||'c1';
 function openSheet(tx,asNew){
 const ed=!!tx&&!asNew;
