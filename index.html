@@ -124,8 +124,9 @@ const arr=monthTx(k),{i,e,u,u1,u2}=sums(arr);const E0=eff(),bk0=bkOf(k,E0),rm=bk
 let h=`<div class="sum"><div class="row"><span>수입</span><span class="inc">${won(i)}원</span></div>${u?`<div class="row" style="font-size:15.6px"><span>　└ 월급 (이동분 제외)</span><span>${won(i-u)}원</span></div>${u1?`<div class="row" style="font-size:15.6px"><span>　└ 용돈 (월급에서 이동, 수입 아님)</span><span>${won(u1)}원</span></div>`:''}`:''}<div class="row"><span>지출</span><span class="exp">${won(e)}원</span></div><div id="rmbox">${remHtml(k,i,e)}</div>`;
 if(S.budget>0){const p=Math.min(100,e/S.budget*100);h+=`<div class="bud"><div class="bar"><i class="${e>S.budget?'over':''}" style="width:${p}%"></i></div><small><span>이번 달 예산 ${won(S.budget)}원</span><span>${e>S.budget?won(e-S.budget)+'원 초과':won(S.budget-e)+'원 남음'}</span></small></div>`}
 h+='</div>';
-const fx=arr.filter(x=>x.t==='e'&&x.r),ins=arr.filter(x=>x.ins),sm2=a=>a.reduce((q,x)=>q+x.a,0);
-if(fx.length||ins.length)h+=`<div style="font-size:15px;color:var(--sub);margin:8px 4px 0;line-height:1.7">${fx.length?`고정비 ${fx.length}건 ${won(sm2(fx))}원`:''}${fx.length&&ins.length?' · ':''}${ins.length?`할부 ${ins.length}건 ${won(sm2(ins))}원`:''}</div>`;
+const fx=arr.filter(x=>x.t==='e'&&x.r),fi=arr.filter(x=>x.t==='i'&&x.r),ins=arr.filter(x=>x.ins),sm2=a=>a.reduce((q,x)=>q+x.a,0);
+const fp=[fx.length?`지출고정비 ${fx.length}건 ${won(sm2(fx))}원`:'',fi.length?`수입고정비 ${fi.length}건 ${won(sm2(fi))}원`:'',ins.length?`할부 ${ins.length}건 ${won(sm2(ins))}원`:''].filter(Boolean);
+if(fp.length)h+=`<div style="font-size:15px;color:var(--sub);margin:8px 4px 0;line-height:1.7">${fp.join(' · ')}</div>`;
 const ac=['동백전','계좌분류'].filter(a=>S.tx.some(x=>(x.c===a&&(x.t==='x'||x.k==='ch'||x.k==='in'))||x.p===a||x.pn===a)||(a==='계좌분류'&&(S.acm||[]).length>0));
 if(ac.length)h+=`<div style="font-size:15px;color:var(--sub);margin:4px 4px 0">${ac.map(a=>cat('x',a)[1]+' '+a+' 잔액 <b style="color:'+(bal(a)<0?'var(--exp)':'var(--ink)')+'">'+won(bal(a))+'원</b>').join(' · ')}</div>`;
 {const E=eff(),ob=outOf(k,E),bk=bkOf(k,E),rw=(a,b,st)=>`<div class="row"${st?' style="'+st+'"':''}><span>${a}</span><span>${b}</span></div>`;
@@ -188,7 +189,7 @@ function vSet(){
 let h=`<div class="mhead"><b>설정</b></div><div class="card"><h3>월 예산</h3><input class="in2" id="bud" inputmode="numeric" placeholder="예: 2,000,000 (0이면 사용 안 함)" value="${S.budget?won(S.budget):''}"><button class="btn p" id="budsave">저장</button></div>`;
 h+='<div class="card"><h3>고정항목 (반복)</h3>';
 if(!S.rec.length)h+='<div style="color:var(--sub);font-size:16.8px">월세·통신비·보험료처럼 반복해서 나가는 돈을 등록해두면 한 번에 넣을 수 있어요. 등록은 + 버튼에서 반복(매주·매월·매년)을 고르세요.</div>';
-S.rec.forEach(r=>h+=`<div class="rr"><div>${cat(r.t,r.c)[1]} ${esc(r.m)||r.c}<small>${rlabel(r)} · ${r.t==='i'?'수입':dn(pname(r.p))}${r.i>1?' · '+r.i+'개월 할부':''}</small></div><div>${won(r.a)}원 <button class="x" data-rd="${r.id}">✕</button></div></div>`);
+[['e','지출 고정비'],['i','수입 고정비']].forEach(([T,L])=>{const rs=S.rec.filter(r=>r.t===T);if(!rs.length)return;h+=`<div style="font-weight:700;margin:10px 0 2px;color:var(--${T==='i'?'inc':'exp'})">${L} ${won(rs.reduce((q,r)=>q+r.a,0))}원</div>`;rs.forEach(r=>h+=`<div class="rr"><div>${cat(r.t,r.c)[1]} ${esc(r.m)||r.c}<small>${rlabel(r)} · ${r.t==='i'?'수입':dn(pname(r.p))}${r.i>1?' · '+r.i+'개월 할부':''}</small></div><div>${won(r.a)}원 <button class="x" data-rd="${r.id}">✕</button></div></div>`)});
 h+='</div>';
 h+=`<div class="card"><h3>백업 / 복원</h3><div style="color:var(--sub);font-size:15.6px;line-height:1.6">기록은 이 기기(Safari)에만 저장돼요. 가끔 백업해두면 폰을 바꿔도 안전해요.</div><button class="btn p" id="exp">백업 파일 저장</button><button class="btn" id="expx">엑셀(CSV)로 내보내기</button><button class="btn g" id="imp">백업 불러오기</button><input type="file" id="file" accept=".json,application/json" style="display:none"></div>`;
 h+=`<div style="text-align:center;color:var(--sub);font-size:14.4px;margin-top:16px">프로그램 버전 ${VER}</div>`;
