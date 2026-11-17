@@ -148,7 +148,13 @@ return h;
 }
 function vStat(k){
 const arr=monthTx(k).filter(x=>x.t==='e'),tot=arr.reduce((a,x)=>a+x.a,0);
-let h='<div class="card"><h3>분류별 지출</h3>';
+const ia=monthTx(k).filter(x=>x.t==='i'),it=ia.reduce((q,x)=>q+x.a,0);
+let h='<div class="card"><h3>수입 내역'+(it?' · <span class="inc">'+won(it)+'원</span>':'')+'</h3>';
+if(!it)h+='<div class="empty" style="padding:16px">수입 기록이 없어요</div>';
+const ib={};ia.forEach(x=>ib[x.c]=(ib[x.c]||0)+x.a);
+Object.entries(ib).sort((a,b)=>b[1]-a[1]).forEach(([c,v])=>{h+=`<div class="bar2"><div class="l"><span>${cat('i',c)[1]} ${c}</span><span>${won(v)}원 · ${Math.round(v/it*100)}%</span></div><div class="t"><i style="width:${v/it*100}%;background:var(--inc)"></i></div></div>`});
+if(it)ia.slice().sort((a,b)=>b.d.localeCompare(a.d)).forEach((x,n)=>{h+=`${n?'':'<div style="border-top:1px dashed var(--line);margin:8px 0 2px"></div>'}<div class="rr"><span>${+x.d.slice(8)}일 · ${cat('i',x.c)[1]} ${esc(x.m||x.c)}</span><b class="inc">${won(x.a)}원</b></div>`});
+h+='</div><div class="card"><h3>분류별 지출</h3>';
 if(!tot)h+='<div class="empty" style="padding:16px">지출 기록이 없어요</div>';
 const by={};arr.forEach(x=>by[x.c]=(by[x.c]||0)+x.a);
 Object.entries(by).sort((a,b)=>b[1]-a[1]).forEach(([c,v])=>{h+=`<div class="bar2"><div class="l"><span>${cat('e',c)[1]} ${c}</span><span>${won(v)}원 · ${Math.round(v/tot*100)}%</span></div><div class="t"><i style="width:${v/tot*100}%"></i></div></div>`});
